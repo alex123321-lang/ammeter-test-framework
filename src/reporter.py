@@ -47,16 +47,17 @@ class AmmeterReporter:
             'ammeter_details': {}
         }
 
-        for name, data in results.items():
-            if 'error' in data:
-                report_data['ammeter_details'][name] = {
+        for ammeter_type, result in results.items():
+
+            if not result.is_success:
+                report_data['ammeter_details'][ammeter_type] = {
                     'status': 'FAILED',
-                    'error': data['error']
+                    'error': result.error
                 }
             else:
-                report_data['ammeter_details'][name] = {
+                report_data['ammeter_details'][ammeter_type] = {
                     'status': 'PASSED',
-                    'statistics': data.get('statistics', {})
+                    'statistics': result.statistics
                 }
 
         path = report_dir / f'ammeter_test_report_{timestamp}.json'
