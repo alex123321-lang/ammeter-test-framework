@@ -28,16 +28,13 @@ class AmmeterCollector:
             self.logger.error(f"Error requesting measurement from port {port}: {e}")
             return None
 
-    def collect_measurements(self, ammeter_type: str, config: dict) -> list:
-        ammeter_config = config['ammeters'][ammeter_type]
+    def collect_measurements(self, ammeter_type: str, ammeter_config, sampling_config) -> list:
+        port = ammeter_config.port
+        command = ammeter_config.command.encode('utf-8')
 
-        port = ammeter_config['port']
-        command = ammeter_config['command'].encode('utf-8')
-
-        sampling_config = config['testing']['sampling']
-        num_measurements = sampling_config['measurements_count']
-        frequency = sampling_config['sampling_frequency_hz']
-        timeout = sampling_config.get('timeout_seconds', 2)
+        num_measurements = sampling_config.measurements_count
+        frequency = sampling_config.sampling_frequency_hz
+        timeout = sampling_config.timeout_seconds
 
         measurements = []
         interval = 1.0 / frequency if frequency > 0 else 0.1

@@ -8,10 +8,10 @@ class AmmeterReporter:
         self.logger = logger
 
     def save_results(self, ammeter_type, measurements, stats, cfg):
-        if not cfg.get('save_results'):
+        if not cfg.save_results:
             return
 
-        results_dir = Path(cfg.get('results_dir', 'results/data'))
+        results_dir = Path(cfg.results_dir)
         results_dir.mkdir(parents=True, exist_ok=True)
 
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -30,13 +30,13 @@ class AmmeterReporter:
         self.logger.info(f"Saved results to {filename}")
 
     def generate_report(self, results, config):
-        report_config = config.get('reporting', {})
+        report_config = config.reporting
 
-        if not report_config.get('generate_report', False):
+        if not report_config.generate_report:
             self.logger.info("Report generation is disabled")
             return None
 
-        report_dir = Path(report_config.get('report_dir', 'results/reports'))
+        report_dir = Path(report_config.report_dir)
         report_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

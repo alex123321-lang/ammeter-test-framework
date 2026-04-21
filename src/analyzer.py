@@ -1,5 +1,13 @@
 import numpy as np
 
+METRICS = {
+    "mean": np.mean,
+    "median": np.median,
+    "std": np.std,
+    "min": np.min,
+    "max": np.max,
+    "variance": np.var,
+}
 
 class AmmeterAnalyzer:
     def __init__(self, logger):
@@ -24,18 +32,9 @@ class AmmeterAnalyzer:
 
         stats = {}
 
-        if 'mean' in metrics:
-            stats['mean'] = float(np.mean(data))
-        if 'median' in metrics:
-            stats['median'] = float(np.median(data))
-        if 'std' in metrics:
-            stats['std'] = float(np.std(data))
-        if 'min' in metrics:
-            stats['min'] = float(np.min(data))
-        if 'max' in metrics:
-            stats['max'] = float(np.max(data))
-        if 'variance' in metrics:
-            stats['variance'] = float(np.var(data))
+        for metric in metrics:
+            if metric in METRICS:
+                stats[metric] = float(METRICS[metric](data))
 
         stats['count'] = len(measurements)
         stats['accuracy'] = self.calculate_accuracy(measurements)

@@ -1,4 +1,4 @@
-from src.utils.config import load_config
+from src.config.config_loader import ConfigLoader
 from src.utils.logger import setup_logger
 
 from src.collector import AmmeterCollector
@@ -10,7 +10,7 @@ from src.comparator import AmmeterComparator
 
 class AmmeterTestFramework:
     def __init__(self, config_path="config/config.yaml"):
-        self.config = load_config(config_path)
+        self.config = ConfigLoader.load(config_path)
         self.logger = setup_logger("AmmeterTestFramework")
 
         self.collector = AmmeterCollector(self.logger)
@@ -22,9 +22,9 @@ class AmmeterTestFramework:
     def run_tests(self):
         results = {}
 
-        for ammeter_type, cfg in self.config['ammeters'].items():
+        for ammeter_type, cfg in self.config.ammeters.items():
 
-            if not cfg.get('enabled', True):
+            if not cfg.enabled:
                 continue
 
             try:
@@ -32,16 +32,17 @@ class AmmeterTestFramework:
 
                 measurements = self.collector.collect_measurements(
                     ammeter_type,
-                    self.config
+                    cfg,
+                    self.config.testing.sampling
                 )
 
                 stats = self.analyzer.calculate_statistics(
                     measurements,
-                    self.config['analysis']['statistical_metrics']
+                    self.config.analysis.statistical_metrics
                 )
 
                 accuracy = stats.get("accuracy")
-                threshold = self.config.get("analysis", {}).get("accuracy", {}).get("threshold")
+                threshold = self.config.analysis.accuracy.threshold
 
                 if threshold and accuracy and accuracy > threshold:
                     self.logger.warning(
@@ -51,14 +52,14 @@ class AmmeterTestFramework:
                 self.visualizer.visualize_results(
                     ammeter_type,
                     measurements,
-                    self.config['analysis']['visualization']
+                    self.config.analysis.visualization
                 )
 
                 self.reporter.save_results(
                     ammeter_type,
                     measurements,
                     stats,
-                    self.config['result_management']
+                    self.config.result_management
                 )
 
                 self.logger.info(f"Test completed for {ammeter_type} ammeter")
