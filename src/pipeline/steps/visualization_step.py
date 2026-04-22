@@ -2,9 +2,10 @@ from src.pipeline.base_step import PipelineStep
 
 
 class VisualizationStep(PipelineStep):
-    def __init__(self, visualizer, viz_config):
+    def __init__(self, visualizer, config, logger):
         self.visualizer = visualizer
-        self.viz_config = viz_config
+        self.config = config
+        self.logger = logger
 
     def process(self, result):
         if not result.is_success:
@@ -13,6 +14,6 @@ class VisualizationStep(PipelineStep):
         self.visualizer.visualize_results(
             result.ammeter_type,
             result.measurements,
-            self.viz_config
+            self.config
         )
         return result

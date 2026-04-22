@@ -16,22 +16,26 @@ from src.models.test_result import TestResult
 
 
 class AmmeterTestFramework:
-    def __init__(self, config_path="config/config.yaml"):
-        self.config = ConfigLoader.load(config_path)
-        self.logger = setup_logger("AmmeterTestFramework")
 
-        self.collector = AmmeterCollector(self.logger)
-        self.analyzer = AmmeterAnalyzer(self.logger)
-        self.visualizer = AmmeterVisualizer(self.logger)
-        self.reporter = AmmeterReporter(self.logger)
-        self.comparator = AmmeterComparator(self.logger)
-        self.pipeline = Pipeline([
-            CollectorStep(self.collector, self.config.testing.sampling, self.logger),
-            AnalysisStep(self.analyzer, self.config.analysis.statistical_metrics),
-            AccuracyStep(self.config.analysis.accuracy.threshold, self.logger),
-            VisualizationStep(self.visualizer, self.config.analysis.visualization),
-            SaveStep(self.reporter, self.config.result_management),
-])
+    def __init__(
+        self,
+        config,
+        collector,
+        analyzer,
+        visualizer,
+        reporter,
+        comparator,
+        pipeline,
+        logger
+    ):
+        self.config = config
+        self.collector = collector
+        self.analyzer = analyzer
+        self.visualizer = visualizer
+        self.reporter = reporter
+        self.comparator = comparator
+        self.pipeline = pipeline
+        self.logger = logger
 
     def run_tests(self):
         results = {}
