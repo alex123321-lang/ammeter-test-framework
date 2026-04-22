@@ -29,41 +29,40 @@ class AmmeterReporter:
 
         self.logger.info(f"Saved results to {filename}")
 
-    def generate_report(self, results, config):
-        report_config = config.reporting
+    def generate_report(self, session):
+        config = session.config.reporting
 
-        if not report_config.generate_report:
+        if not config.generate_report:
             self.logger.info("Report generation is disabled")
-            return None
+            return
 
-        report_dir = Path(report_config.report_dir)
+        report_dir = Path(config.report_dir)
         report_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = session.timestamp.strftime("%Y%m%d_%H%M%S")
 
         report_data = {
-            'timestamp': timestamp,
-            'total_ammeters_tested': len(results),
-            'ammeter_details': {}
+            "timestamp": timestamp,
+            "summary": session.summary(),
+            "ammeters": {}
         }
 
-        for ammeter_type, result in results.items():
-
+        for ammeter, result in session.results.items():
             if not result.is_success:
-                report_data['ammeter_details'][ammeter_type] = {
-                    'status': 'FAILED',
-                    'error': result.error
+                report_data["ammeters"][ammeter] = {
+                    "status": "FAILED",
+                    "error": result.error
                 }
             else:
-                report_data['ammeter_details'][ammeter_type] = {
-                    'status': 'PASSED',
-                    'statistics': result.statistics
+                report_data["ammeters"][ammeter] = {
+                    "status": "PASSED",
+                    "statistics": result.statistics
                 }
 
-        path = report_dir / f'ammeter_test_report_{timestamp}.json'
+        path = report_dir / f"ammeter_test_report_{timestamp}.json"
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
+            import json
             json.dump(report_data, f, indent=2)
 
         self.logger.info(f"Report generated: {path}")
-        return path

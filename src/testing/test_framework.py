@@ -1,17 +1,4 @@
-from src.pipeline.pipeline import Pipeline
-from src.pipeline.steps.accuracy_step import AccuracyStep
-from src.pipeline.steps.analysis_step import AnalysisStep
-from src.pipeline.steps.collector_step import CollectorStep
-from src.pipeline.steps.save_step import SaveStep
-from src.pipeline.steps.visualization_step import VisualizationStep
-from src.config.config_loader import ConfigLoader
-from src.utils.logger import setup_logger
-
-from src.collector import AmmeterCollector
-from src.analyzer import AmmeterAnalyzer
-from src.visualizer import AmmeterVisualizer
-from src.reporter import AmmeterReporter
-from src.comparator import AmmeterComparator
+from src.models.test_session import TestSession
 from src.models.test_result import TestResult
 
 
@@ -38,7 +25,8 @@ class AmmeterTestFramework:
         self.logger = logger
 
     def run_tests(self):
-        results = {}
+        session = TestSession(self.config)
+
 
         for ammeter_type, cfg in self.config.ammeters.items():
 
@@ -64,24 +52,26 @@ class AmmeterTestFramework:
                 result = self.pipeline.run(result)
 
                 # 3. Store result
-                results[ammeter_type] = result
+                session.add_result(result)
 
                 self.logger.info(f"Test completed for {ammeter_type} ammeter")
 
             except Exception as e:
                 self.logger.error(f"Test failed for {ammeter_type} ammeter: {e}")
 
-                results[ammeter_type] = TestResult(
-                    ammeter_type=ammeter_type,
-                    measurements=[],
-                    statistics={},
-                    error=str(e)
+                session.add_result(
+                    TestResult(
+                        ammeter_type=ammeter_type,
+                        measurements=[],
+                        statistics={},
+                        error=str(e)
+                    )
                 )
 
         # 4. Comparative analysis
-        self.comparator.comparative_analysis(results)
+        self.comparator.comparative_analysis(session)
 
         # 5. Report
-        self.reporter.generate_report(results, self.config)
+        self.reporter.generate_report(session)
 
-        return results
+        return session

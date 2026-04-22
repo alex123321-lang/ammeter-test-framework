@@ -11,7 +11,7 @@ from src.utils.logger import setup_logger
 
 
 def main():
-    # 1. Load config 
+    # 1. Load config
     config = ConfigLoader.load("config/config.yaml")
 
     logger = setup_logger("AmmeterTestFramework")
