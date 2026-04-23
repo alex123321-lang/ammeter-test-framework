@@ -1,12 +1,22 @@
 import socket
 import time
 
+class MeasurementTimeoutError(Exception):
+    pass
+
+class MeasurementConnectionError(Exception):
+    pass
+
+class MeasurementEmptyDataError(Exception):
+    pass
+
 
 class AmmeterCollector:
     def __init__(self, logger):
         self.logger = logger
 
-    def request_measurement(self, port: int, command: bytes, timeout: int = 2) -> float:
+    @staticmethod
+    def request_measurement(port: int, command: bytes, timeout: int = 2) -> float:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout)
@@ -14,44 +24,46 @@ class AmmeterCollector:
                 s.sendall(command)
                 data = s.recv(1024)
 
-                if data:
-                    return float(data.decode('utf-8'))
-                else:
-                    self.logger.warning(f"No data received from port {port}")
-                    return None
+                if not data:
+                    raise MeasurementEmptyDataError(f"No data received from port {port}")
+
+                return float(data.decode("utf-8"))
 
         except socket.timeout:
-            self.logger.error(f"Timeout connecting to port {port}")
-            return None
+            raise MeasurementTimeoutError(f"Timeout connecting to port {port}")
 
         except Exception as e:
-            self.logger.error(f"Error requesting measurement from port {port}: {e}")
-            return None
+            raise MeasurementConnectionError(str(e))
 
-    def collect_measurements(self, ammeter_type: str, ammeter_config, sampling_config) -> list:
-        port = ammeter_config.port
-        command = ammeter_config.command.encode('utf-8')
+    def collect_measurements(self, ammeter_type, cfg, sampling_config):
+        return list(self.stream_measurements(ammeter_type, cfg, sampling_config))
 
-        num_measurements = sampling_config.measurements_count
-        frequency = sampling_config.sampling_frequency_hz
+    def stream_measurements(self, ammeter_type, cfg, sampling_config):
+        port = cfg.port
+        command = cfg.command.encode("utf-8")
+
+        num = sampling_config.measurements_count
+        freq = sampling_config.sampling_frequency_hz
         timeout = sampling_config.timeout_seconds
 
-        measurements = []
-        interval = 1.0 / frequency if frequency > 0 else 0.1
+        interval = 1.0 / freq if freq > 0 else 0.1
 
         self.logger.info(
-            f"Collecting {num_measurements} measurements from {ammeter_type} at {frequency}Hz"
+            f"Collecting {num} measurements from {ammeter_type} at {freq}Hz"
         )
 
-        for i in range(num_measurements):
-            start_time = time.time()
+        for i in range(num):
+            start = time.time()
 
-            m = self.request_measurement(port, command, timeout)
-            if m is not None:
-                measurements.append(m)
+            measurement = self.request_measurement(port, command, timeout)
 
-            elapsed = time.time() - start_time
+            self.logger.debug(
+                f"[{i + 1}/{num}] {ammeter_type}: {measurement:.4f}A"
+            )
+
+            yield measurement
+
+            elapsed = time.time() - start
             time.sleep(max(0, interval - elapsed))
 
-        self.logger.info(f"Collected {len(measurements)} measurements from {ammeter_type}")
-        return measurements
+        self.logger.info(f"Finished streaming {ammeter_type}")

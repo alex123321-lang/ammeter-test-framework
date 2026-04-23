@@ -1,5 +1,6 @@
 from src.models.test_session import TestSession
 from src.models.test_result import TestResult
+from src.utils.error_classifier import classify_error
 
 
 class AmmeterTestFramework:
@@ -54,17 +55,24 @@ class AmmeterTestFramework:
                 # 3. Store result
                 session.add_result(result)
 
-                self.logger.info(f"Test completed for {ammeter_type} ammeter")
+                self.logger.info(
+                    f"Test completed for {ammeter_type} ammeter (success={result.is_success})"
+                )
 
             except Exception as e:
-                self.logger.error(f"Test failed for {ammeter_type} ammeter: {e}")
+                error_type = classify_error(e)
+
+                self.logger.error(
+                    f"{ammeter_type} failed [{error_type}]: {e}"
+                )
 
                 session.add_result(
                     TestResult(
                         ammeter_type=ammeter_type,
                         measurements=[],
                         statistics={},
-                        error=str(e)
+                        error=str(e),
+                        error_type=error_type
                     )
                 )
 

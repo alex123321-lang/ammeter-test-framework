@@ -9,25 +9,14 @@ class CollectorStep(PipelineStep):
         self.logger = logger
 
     def process(self, result):
-        self.logger.info(
-            f"Collecting {self.sampling_config.measurements_count} "
-            f"measurements from {result.ammeter_type} at "
-            f"{self.sampling_config.sampling_frequency_hz}Hz"
-        )
-
-        # cfg for current ammeter comes from result context OR injected mapping
         cfg = result.meta["ammeter_cfg"]
 
-        measurements = self.collector.collect_measurements(
+        stream = self.collector.stream_measurements(
             result.ammeter_type,
             cfg,
             self.sampling_config
         )
 
-        result.measurements = measurements
-
-        self.logger.info(
-            f"Collected {len(measurements)} measurements from {result.ammeter_type}"
-        )
+        result.stream = stream  #  pass stream forward
 
         return result
